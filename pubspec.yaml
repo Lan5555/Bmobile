@@ -37,6 +37,30 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_animate: ^4.0.0
   carousel_slider: ^5.0.0
+  animations: ^2.0.11
+  flutter_local_notifications: ^18.0.1
+  url_launcher: ^6.3.1
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  location: ^7.0.1
+  provider: ^6.1.2
+  table_calendar: ^3.2.0
+  #mapbox_gl: ^0.16.0
+  cloud_firestore: ^5.6.4
+  geolocator: ^13.0.2
+  firebase_auth: ^5.5.0
+  geocoding: ^3.0.0
+  mapbox_maps_flutter: ^2.0.0
+  permission_handler: ^11.4.0
+  font_awesome_flutter: ^10.2.1  # Use the latest version available
+  geotypes: ^0.0.2
+  fluttertoast: ^8.2.12
+  dio: ^5.8.0+1
+  mapbox_search: ^4.3.1
+  http: ^1.3.0
+ 
+  #mapbox_gl: ^0.16.0
+  
 
 dev_dependencies:
   flutter_test:
@@ -81,6 +105,7 @@ flutter:
       - misc/icons/id-card.png
       - misc/icons/diskette.png
       - misc/icons/bell.png
+      - misc/icons/location.png 
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

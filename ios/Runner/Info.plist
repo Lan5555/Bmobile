@@ -45,5 +45,17 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to book rides</string>
+
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We need your location to track rides</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to your location at all times for ride tracking</string>
+
+	<key>MBXAccessToken</key>
+	<string>pk.eyJ1IjoiYi1tb2JpbGUiLCJhIjoiY203Njdyd3djMHBzZTJxc2NicmVodjVybSJ9.M29f5Xh5TbJ3cmwHHEhtiA</string>
+
 </dict>
 </plist>

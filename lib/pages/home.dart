@@ -1,5 +1,8 @@
 import 'package:b_mobile/pages/body.dart';
+import 'package:b_mobile/pages/book_a_ride.dart';
+import 'package:b_mobile/pages/schedule_ride.dart';
 import 'package:b_mobile/pages/settings.dart';
+import 'package:b_mobile/widgets/map_guide.dart';
 import 'package:flutter/material.dart';
 
 class Home extends StatefulWidget {
@@ -9,13 +12,17 @@ class Home extends StatefulWidget {
 }
 
 class HomePage extends State<Home> {
-  List<Widget> pages = [const BodyPage()];
+  List<Widget> pages = [
+  const BodyPage(),
+  const ScheduleRide()
+    ];
   int currentPageIndex = 0;
   int tracker = 0;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      resizeToAvoidBottomInset: false,
+      appBar:currentPageIndex != 2 ? AppBar(
         backgroundColor: Colors.transparent,
         title: const Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -47,7 +54,7 @@ class HomePage extends State<Home> {
                 ),
               )),
         ],
-      ),
+      ):null,
       body: currentPageIndex < pages.length
           ? pages[currentPageIndex]
           : const Center(
@@ -57,7 +64,10 @@ class HomePage extends State<Home> {
           shape: const CircleBorder(),
           onPressed: () {
             setState(() {
-              currentPageIndex = 3;
+              Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Ride()));
             });
           },
           child: const Icon(Icons.drive_eta)),

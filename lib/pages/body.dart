@@ -145,7 +145,9 @@ class Body extends State<BodyPage> {
                                         WidgetStatePropertyAll(Colors.white),
                                     shadowColor:
                                         WidgetStatePropertyAll(Colors.black)),
-                                onPressed: () {},
+                                onPressed: () {
+                                  
+                                },
                                 child: const Text('Book a ride')),
                           ))),
                   Container(
