@@ -7,6 +7,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart' as gl;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mb;
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class MapState extends StatefulWidget {
   const MapState({super.key});
@@ -24,13 +26,16 @@ class MapPage extends State<MapState> {
   List<dynamic> searchResults = [];
   Map<String, List<dynamic>> searchCache = {};
   bool isLoading = false;
-  final API_KEY =
-      "sk.eyJ1IjoiYi1tb2JpbGUiLCJhIjoiY204NHhpZG40MHh6aDJpcXZ3b3p5Y280YyJ9.H-gBoe0xrTXRUCX_3je6Uw";
+  late mb.PointAnnotationManager _pointAnnotationManager;
+  late mb.PolylineAnnotationManager _polylineAnnotationManager;
+  String? API_KEY = dotenv.env['API_KEY'];
+  gl.Position? currentPosition;
 
   @override
   void initState() {
     super.initState();
     _setUpTracking();
+    _addMarker(userLat!, userLng!);
   }
 
   @override
@@ -101,6 +106,7 @@ class MapPage extends State<MapState> {
     } else {
       setState(() {
         expanded = false;
+        searchController.clear();
       });
     }
 
@@ -136,9 +142,37 @@ class MapPage extends State<MapState> {
     }
   }
 
+  Future<void> _addMarker(double lattitude, double longitude) async {
+    final ByteData bytes = await rootBundle.load('misc/icons/location.png');
+    final Uint8List imageData = bytes.buffer.asUint8List();
+
+    final pointAnnotationOptions = mb.PointAnnotationOptions(
+        geometry: mb.Point(
+          coordinates: mb.Position(longitude, lattitude),
+        ),
+        image: imageData,
+        iconSize: 1.0);
+    _pointAnnotationManager.create(pointAnnotationOptions);
+  }
+
+  void _addPolyline(
+      double startLat, double startLng, double endLat, double endLng) {
+    List<mb.Position> points = [
+      mb.Position(startLng, startLat),
+      mb.Position(endLng, endLat)
+    ];
+    final line = mb.LineString(coordinates: points);
+    final polylineAnnotationOptions = mb.PolylineAnnotationOptions(
+        geometry: line, lineColor: 0xFFFF0000, lineWidth: 5.0);
+
+    _polylineAnnotationManager.create(polylineAnnotationOptions);
+  }
+
   // Move map to selected location
-  void moveToLocation(double latitude, double longitude) {
-    _mapboxMap!.setCamera(mb.CameraOptions(
+  void moveToLocation(double latitude, double longitude) async {
+    if (_mapboxMap == null) return;
+
+    await _mapboxMap!.setCamera(mb.CameraOptions(
       center: mb.Point(coordinates: mb.Position(longitude, latitude)),
       zoom: 12.0,
     ));
@@ -151,9 +185,27 @@ class MapPage extends State<MapState> {
     final longitude = feature['geometry']['coordinates'][0];
 
     moveToLocation(latitude, longitude);
+    if (currentPosition != null) {
+      _addPolyline(
+        currentPosition!.latitude,
+        currentPosition!.longitude,
+        latitude,
+        longitude,
+      );
+    }
+
+    // Add marker for the destination
+    _addMarker(latitude, longitude);
   }
 
-
+  final FocusNode _focusNode = FocusNode();
+  bool keyboardHidden = false;
+  void unFocus() {
+    if (keyboardHidden) {
+      _focusNode.unfocus();
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,14 +221,17 @@ class MapPage extends State<MapState> {
               child: CircularProgressIndicator(),
             ),
           Positioned(
-            top: 10,
+            top: 17,
             left: 0,
             right: 0,
             child: Padding(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(10),
               child: AnimatedContainer(
                 height: expanded ? 350 : 100,
-                color: expanded ? Colors.white : Colors.transparent,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: expanded ? Colors.white : Colors.transparent,
+                ),
                 duration: const Duration(milliseconds: 300),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -187,22 +242,23 @@ class MapPage extends State<MapState> {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          boxShadow: const [
+                          boxShadow: [
                             BoxShadow(
                               blurRadius: 28,
                               spreadRadius: 0.0,
-                              offset: Offset(0, 24 * 0.15),
-                              color: Colors.black,
+                              offset: const Offset(0, 24 * 0.15),
+                              color: Colors.black.withOpacity(0.5),
                             ),
                           ],
                           borderRadius: BorderRadius.circular(5),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: TextField(
+                          focusNode: _focusNode,
                           controller: searchController,
                           decoration: const InputDecoration(
                             border: InputBorder.none,
-                            prefixIcon: Icon(Icons.location_on),
+                            prefixIcon: Icon(Icons.search),
                             label: Text('Search'),
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 4, horizontal: 20),
@@ -210,8 +266,6 @@ class MapPage extends State<MapState> {
                           onChanged: (value) => searchPlaces(value),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      // Use Expanded here to make ListView take the remaining space
                       Expanded(
                         child: ListView.builder(
                           shrinkWrap: true,
@@ -222,7 +276,9 @@ class MapPage extends State<MapState> {
                                 place['full_address'] ?? 'Unknown Address';
 
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 10),
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(
+                                  bottom: 10, left: 10, right: 10),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(5),
                                 color: Colors.white,
@@ -236,12 +292,22 @@ class MapPage extends State<MapState> {
                                 ],
                               ),
                               child: ListTile(
-                                title: Text(fullAddress),
-                                leading: const Icon(Icons.location_on),
+                                title: Text(
+                                  fullAddress,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                                leading: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.blue,
+                                ),
                                 onTap: () {
                                   _moveToLocationFromSearchResult(index);
-                                  Navigator.pop(
-                                      context); // Close the search screen
+                                  searchController.clear();
+                                  setState(() {
+                                    expanded = false;
+                                    keyboardHidden = true;
+                                  });
+                                  unFocus();
                                 },
                               ),
                             );
